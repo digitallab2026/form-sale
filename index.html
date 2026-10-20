@@ -33,7 +33,21 @@
 body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 17px; line-height: 1.45; }
 .wrap { max-width: 34rem; margin-inline: auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 140px; display: flex; flex-direction: column; gap: 14px; }
 .top { display: flex; flex-direction: column; gap: 4px; }
-.brand { font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.brandrow { display: flex; align-items: flex-end; gap: 6px; margin-bottom: 4px; }
+.logo { height: 52px; width: auto; }
+.talaa { height: 76px; width: auto; margin-bottom: -4px; }
+.quote { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px 0 10px 12px; overflow: hidden; }
+.quote-tag { flex: none; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--accent-ink); background: var(--accent); border-radius: 999px; padding: 3px 9px; }
+.quote-track { flex: 1; min-width: 0; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 16px, #000 calc(100% - 24px), transparent); mask-image: linear-gradient(90deg, transparent, #000 16px, #000 calc(100% - 24px), transparent); }
+.quote-run { display: inline-flex; white-space: nowrap; font-size: 16px; font-weight: 500; font-style: italic; }
+.quote-run span { padding-right: 64px; }
+@media (prefers-reduced-motion: no-preference) {
+  .quote-run.moving { animation: chay var(--dur, 22s) linear infinite; }
+  @keyframes chay { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+}
+@media (prefers-reduced-motion: reduce) {
+  .quote-run { white-space: normal; } .quote-run span + span { display: none; } .quote-run span { padding-right: 12px; }
+}
 h1 { font-size: 26px; font-weight: 700; margin: 0; text-wrap: balance; }
 .when { color: var(--muted); font-size: 15px; }
 .who { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--accent-soft); border-radius: 14px; padding: 10px 14px; font-size: 15px; }
@@ -92,7 +106,10 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 3px
 <body>
 <div class="wrap">
   <header class="top">
-    <span class="brand">Sơn Thăng Long · Kinh doanh</span>
+    <div class="brandrow">
+      <img src="logo.png" alt="Logo Sơn Thăng Long" class="logo" width="230" height="128">
+      <img src="talaa.png" alt="Ta Laa" class="talaa" width="163" height="220">
+    </div>
     <h1>Báo cáo thăm đại lý</h1>
     <span class="when" id="when"></span>
   </header>
@@ -100,6 +117,11 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 3px
   <div class="who" id="who" hidden>
     <span>Người báo cáo: <b id="whoName"></b></span>
     <button class="link" type="button" id="changeName">Đổi tên</button>
+  </div>
+
+  <div class="quote" id="quote" aria-label="Câu nói hôm nay">
+    <span class="quote-tag">Hôm nay</span>
+    <div class="quote-track"><div class="quote-run" id="quoteRun"></div></div>
   </div>
 
   <div class="pending" id="pending" hidden>
@@ -183,6 +205,52 @@ const SHEET_URL = 'DAN_LINK_APPS_SCRIPT_VAO_DAY';
   const THU = ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'];
   const now = new Date();
   $('when').textContent = THU[now.getDay()] + ', ' + pad(now.getDate()) + '/' + pad(now.getMonth() + 1) + '/' + now.getFullYear() + ' · ngày giờ tự ghi';
+
+  // Câu nói truyền cảm hứng: mỗi ngày một câu, cả đội thấy cùng một câu
+  const QUOTES = [
+    'Có công mài sắt, có ngày nên kim.',
+    'Kiến tha lâu cũng đầy tổ.',
+    'Đi một ngày đàng, học một sàng khôn.',
+    'Một cây làm chẳng nên non, ba cây chụm lại nên hòn núi cao.',
+    'Thất bại là mẹ thành công.',
+    'Nước chảy đá mòn.',
+    'Mỗi đại lý ghé thăm hôm nay là một cánh cửa mở cho tháng sau.',
+    'Khách chưa mua hôm nay vẫn nhớ người đã đến tận nơi.',
+    'Đại lý tin người trước, rồi mới tin sản phẩm.',
+    'Một lời hỏi thăm chân thành đáng giá hơn mười tờ báo giá.',
+    'Hôm nay chăm một đại lý, mai có thêm một người bạn làm ăn.',
+    'Lời từ chối hôm nay chỉ là lời hẹn cho lần ghé sau.',
+    'Sơn tốt nhờ từng lớp đều tay, khách bền nhờ từng lần ghé thăm.',
+    'Đi nhiều thì biết nhiều, biết nhiều thì bán được nhiều.',
+    'Không có đại lý khó, chỉ có lần ghé chưa đủ.',
+    'Ghi lại hôm nay để ngày mai bán tốt hơn.',
+    'Hiểu đại lý cần gì là đã bán được một nửa.',
+    'Người bán giỏi là người lắng nghe nhiều hơn nói.',
+    'Mỗi chuyến đi là một cơ hội, mỗi cuộc gặp là một bài học.',
+    'Uy tín xây bằng việc nhỏ làm đều đặn mỗi ngày.',
+    'Chất lượng sản phẩm giữ khách, chất lượng người bán kéo khách về.',
+    'Bắt đầu ngày mới bằng một nụ cười, đại lý sẽ đón bằng một tách trà.',
+    'Hạt giống gieo hôm nay sẽ thành mùa vụ cuối năm.',
+    'Kiên trì là thứ đối thủ khó sao chép nhất.',
+    'Ít mà chắc còn hơn nhiều mà hời hợt.',
+    'Mỗi đại lý mới là một điểm sáng trên bản đồ Thăng Long.',
+    'Đường dài mới biết ngựa hay, đi nhiều mới biết đại lý hay.',
+    'Làm tốt việc hôm nay là cách chắc nhất để có ngày mai tốt hơn.',
+    'Cả đội cùng tiến, doanh số cùng lên. Khẳng định CHẤT!',
+    'Chăm chỉ không bao giờ lỗi thời.'
+  ];
+  (function showQuote() {
+    const d = new Date();
+    const dayNo = Math.floor((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - Date.UTC(2026, 0, 1)) / 86400000);
+    const q = QUOTES[((dayNo % QUOTES.length) + QUOTES.length) % QUOTES.length];
+    const run = $('quoteRun');
+    for (let i = 0; i < 2; i++) { const s = document.createElement('span'); s.textContent = '“' + q + '”'; if (i) s.setAttribute('aria-hidden', 'true'); run.appendChild(s); }
+    requestAnimationFrame(() => {
+      const w = run.firstChild.getBoundingClientRect().width;
+      run.style.setProperty('--dur', Math.max(10, w / 45) + 's');
+      run.classList.add('moving');
+    });
+  })();
 
   // Lưu trữ trên máy (nhớ tên, danh sách đã nhập, hàng chờ gửi khi mất mạng)
   const store = {
