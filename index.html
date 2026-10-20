@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0B6B5C">
+<title>Báo cáo đại lý STL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap">
+<style>
+/* Một cột, nút to cho ngón cái; mỗi câu hỏi là một khối, nút Lưu luôn ở đáy màn hình. */
+:root {
+  --bg: #F3F5F4;
+  --surface: #FFFFFF;
+  --ink: #17221F;
+  --muted: #5B6863;
+  --line: #D5DDDA;
+  --accent: #0B6B5C;
+  --accent-ink: #FFFFFF;
+  --accent-soft: #DDEFEB;
+  --bad: #B3261E;
+  --warn-soft: #FFF3D6;
+  --font: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color-scheme: light;
+  padding-top: env(safe-area-inset-top, 0px);
+}
+@media (prefers-color-scheme: dark) { :root {
+  --bg: #0F1513; --surface: #18211E; --ink: #E6EEEB; --muted: #9AA8A3; --line: #2C3934;
+  --accent: #3DB39D; --accent-ink: #06201B; --accent-soft: #173A33; --bad: #F2867D; --warn-soft: #3A3018; color-scheme: dark } }
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 17px; line-height: 1.45; }
+.wrap { max-width: 34rem; margin-inline: auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 140px; display: flex; flex-direction: column; gap: 14px; }
+.top { display: flex; flex-direction: column; gap: 4px; }
+.brand { font-size: 13px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { font-size: 26px; font-weight: 700; margin: 0; text-wrap: balance; }
+.when { color: var(--muted); font-size: 15px; }
+.who { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--accent-soft); border-radius: 14px; padding: 10px 14px; font-size: 15px; }
+.who b { font-weight: 600; }
+.link { background: none; border: 0; color: var(--accent); font: inherit; font-weight: 600; padding: 6px 2px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.pending { background: var(--warn-soft); border-radius: 14px; padding: 10px 14px; font-size: 15px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+
+form { display: flex; flex-direction: column; gap: 14px; }
+.q { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.q label, .q .lbl { font-weight: 600; font-size: 17px; }
+.req { color: var(--bad); }
+.opt { color: var(--muted); font-weight: 400; font-size: 14px; }
+.hint { color: var(--muted); font-size: 14px; margin: -4px 0 0; }
+input[type=text], input[type=tel], textarea { width: 100%; font: inherit; font-size: 18px; color: var(--ink); background: var(--bg); border: 1.5px solid var(--line); border-radius: 12px; padding: 14px; min-height: 54px; }
+textarea { min-height: 96px; resize: vertical; }
+input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.q.err input { border-color: var(--bad); }
+.errmsg { color: var(--bad); font-size: 14px; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font: inherit; font-size: 16px; min-height: 46px; padding: 0 16px; border-radius: 999px; border: 1.5px solid var(--line); background: var(--bg); color: var(--ink); cursor: pointer; }
+.chip[aria-pressed=true] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.results { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.res { font: inherit; font-size: 16px; text-align: left; min-height: 58px; padding: 10px 14px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--bg); color: var(--ink); cursor: pointer; display: flex; align-items: center; gap: 10px; }
+.res:last-child:nth-child(odd) { grid-column: 1 / -1; }
+.res .dot { width: 20px; height: 20px; flex: none; border-radius: 50%; border: 2px solid var(--line); }
+.res[aria-checked=true] { border-color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+.res[aria-checked=true] .dot { border-color: var(--accent); background: var(--accent); box-shadow: inset 0 0 0 3px var(--accent-soft); }
+
+.bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--bg); border-top: 1px solid var(--line); padding: 12px max(16px, env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+.bar-in { max-width: 34rem; margin-inline: auto; }
+.save { width: 100%; min-height: 58px; border: 0; border-radius: 14px; background: var(--accent); color: var(--accent-ink); font: inherit; font-size: 19px; font-weight: 700; cursor: pointer; }
+.save:disabled { opacity: .6; cursor: default; }
+.status { text-align: center; font-size: 14px; color: var(--muted); margin-top: 6px; min-height: 1.2em; }
+.status.bad { color: var(--bad); }
+
+.done { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 28px 18px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.tick { width: 64px; height: 64px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; }
+.done h2 { margin: 0; font-size: 22px; }
+.done p { margin: 0; color: var(--muted); }
+
+.today h2 { font-size: 17px; margin: 8px 0; }
+.today ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.today li { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: flex; justify-content: space-between; gap: 10px; }
+.today .t { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 15px; flex: none; text-align: right; }
+.today .n { font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.today .s { color: var(--muted); font-size: 14px; font-weight: 400; }
+.today .wait { color: var(--bad); font-size: 13px; display: block; }
+.empty { color: var(--muted); font-size: 15px; margin: 0; }
+
+.dlg { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: grid; place-items: center; padding: 16px; z-index: 20; }
+.dlg-box { background: var(--surface); border-radius: 18px; padding: 20px; width: 100%; max-width: 26rem; display: flex; flex-direction: column; gap: 12px; }
+.dlg-box h2 { margin: 0; font-size: 20px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <span class="brand">Sơn Thăng Long · Kinh doanh</span>
+    <h1>Báo cáo thăm đại lý</h1>
+    <span class="when" id="when"></span>
+  </header>
+
+  <div class="who" id="who" hidden>
+    <span>Người báo cáo: <b id="whoName"></b></span>
+    <button class="link" type="button" id="changeName">Đổi tên</button>
+  </div>
+
+  <div class="pending" id="pending" hidden>
+    <span id="pendingText"></span>
+    <button class="link" type="button" id="retryBtn">Gửi lại</button>
+  </div>
+
+  <form id="f" novalidate>
+    <div class="q" id="qName">
+      <label for="dai_ly">1. Tên đại lý <span class="req">*</span></label>
+      <input type="text" id="dai_ly" autocomplete="off" placeholder="VD: Đại lý Chính Hiền">
+      <span class="errmsg" id="nameErr" hidden>Bạn cần ghi tên đại lý.</span>
+    </div>
+
+    <div class="q">
+      <label for="khu_vuc">2. Ở đâu? <span class="opt">(xã/huyện)</span></label>
+      <input type="text" id="khu_vuc" autocomplete="off" placeholder="VD: Quang Minh, Mê Linh">
+    </div>
+
+    <div class="q">
+      <label for="sdt">3. Số điện thoại chủ đại lý <span class="opt">(nếu có)</span></label>
+      <input type="tel" id="sdt" inputmode="tel" autocomplete="off" placeholder="09xx xxx xxx">
+    </div>
+
+    <div class="q">
+      <span class="lbl" id="hangLbl">4. Đại lý đang bán sơn gì? <span class="opt">(chọn nhiều)</span></span>
+      <div class="chips" role="group" aria-labelledby="hangLbl" id="hang"></div>
+    </div>
+
+    <div class="q">
+      <span class="lbl" id="kqLbl">5. Kết quả hôm nay</span>
+      <div class="results" role="radiogroup" aria-labelledby="kqLbl" id="kq"></div>
+    </div>
+
+    <div class="q">
+      <label for="ghi_chu">6. Ghi chú thêm <span class="opt">(nếu có)</span></label>
+      <p class="hint">Mẹo: bấm biểu tượng micro trên bàn phím để nói thay vì gõ.</p>
+      <textarea id="ghi_chu" placeholder="VD: Muốn xin biển bảng, hẹn tuần sau gửi báo giá"></textarea>
+    </div>
+  </form>
+
+  <section class="done" id="done" hidden>
+    <div class="tick"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+    <h2 id="doneTitle">Đã lưu</h2>
+    <p id="doneText"></p>
+  </section>
+
+  <section class="today">
+    <h2 id="todayTitle">Hôm nay bạn đã nhập</h2>
+    <ul id="todayList"></ul>
+    <p class="empty" id="todayEmpty">Chưa có đại lý nào. Nhập đại lý đầu tiên ở trên rồi bấm Lưu.</p>
+  </section>
+</div>
+
+<div class="bar"><div class="bar-in">
+  <button class="save" id="saveBtn" type="button">Lưu báo cáo</button>
+  <div class="status" id="status"></div>
+</div></div>
+
+<div class="dlg" id="nameDlg" hidden>
+  <div class="dlg-box" role="dialog" aria-modal="true" aria-labelledby="dlgTitle">
+    <h2 id="dlgTitle">Bạn tên là gì?</h2>
+    <p class="hint" style="margin:0">Chỉ hỏi một lần, máy sẽ nhớ cho các lần sau.</p>
+    <input type="text" id="myName" autocomplete="name" placeholder="VD: Ngô Ngọc Hoan">
+    <button class="save" type="button" id="saveName">Xong</button>
+  </div>
+</div>
+
+<script>
+/* ====== CẤU HÌNH: dán link Web App của Google Apps Script vào đây ====== */
+const SHEET_URL = 'DAN_LINK_APPS_SCRIPT_VAO_DAY';
+/* ====================================================================== */
+
+(function () {
+  const BRANDS = ['Dulux', 'Nippon', 'Jotun', 'Kova', 'Expo', 'Mykolor', 'Mutolux', 'Khác'];
+  const RESULTS = ['Chào lần đầu', 'Ghé chăm sóc', 'Đã gửi báo giá', 'Nhập hàng trưng bày', 'Có đơn hàng', 'Hẹn quay lại', 'Chưa quan tâm'];
+  const $ = (id) => document.getElementById(id);
+  const pad = (n) => String(n).padStart(2, '0');
+  const dayKey = (d) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  const hm = (iso) => { const d = new Date(iso); return pad(d.getHours()) + ':' + pad(d.getMinutes()); };
+  const THU = ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'];
+  const now = new Date();
+  $('when').textContent = THU[now.getDay()] + ', ' + pad(now.getDate()) + '/' + pad(now.getMonth() + 1) + '/' + now.getFullYear() + ' · ngày giờ tự ghi';
+
+  // Lưu trữ trên máy (nhớ tên, danh sách đã nhập, hàng chờ gửi khi mất mạng)
+  const store = {
+    get(k, def) { try { const v = localStorage.getItem(k); return v === null ? def : JSON.parse(v); } catch (e) { return def; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  };
+  let myName = store.get('stl_ten_nv', '');
+  let history = store.get('stl_lich_su', []).filter(r => r.ngay === dayKey(new Date()));
+  let queue = store.get('stl_cho_gui', []);
+
+  // Nút chọn hãng
+  const picked = new Set();
+  BRANDS.forEach(b => {
+    const el = document.createElement('button');
+    el.type = 'button'; el.className = 'chip'; el.textContent = b; el.setAttribute('aria-pressed', 'false');
+    el.addEventListener('click', () => {
+      if (picked.has(b)) picked.delete(b); else picked.add(b);
+      el.setAttribute('aria-pressed', String(picked.has(b)));
+    });
+    $('hang').appendChild(el);
+  });
+
+  // Nút kết quả
+  let result = '';
+  RESULTS.forEach(r => {
+    const el = document.createElement('button');
+    el.type = 'button'; el.className = 'res'; el.setAttribute('role', 'radio'); el.setAttribute('aria-checked', 'false');
+    const dot = document.createElement('span'); dot.className = 'dot';
+    const t = document.createElement('span'); t.textContent = r;
+    el.append(dot, t);
+    el.addEventListener('click', () => {
+      result = result === r ? '' : r;
+      $('kq').querySelectorAll('.res').forEach(x => x.setAttribute('aria-checked', String(x.lastChild.textContent === result)));
+    });
+    $('kq').appendChild(el);
+  });
+
+  // Tên người báo cáo
+  function showWho() { $('who').hidden = !myName; $('whoName').textContent = myName; }
+  function askName() { $('myName').value = myName; $('nameDlg').hidden = false; setTimeout(() => $('myName').focus(), 50); }
+  $('saveName').addEventListener('click', () => {
+    const v = $('myName').value.trim();
+    if (!v) { $('myName').focus(); return; }
+    myName = v; store.set('stl_ten_nv', v);
+    $('nameDlg').hidden = true; showWho();
+  });
+  $('myName').addEventListener('keydown', e => { if (e.key === 'Enter') $('saveName').click(); });
+  $('changeName').addEventListener('click', askName);
+  showWho();
+  if (!myName) askName();
+
+  function setStatus(msg, bad) { $('status').textContent = msg; $('status').className = 'status' + (bad ? ' bad' : ''); }
+
+  function renderToday() {
+    const items = history.slice().sort((a, b) => (a.at < b.at ? 1 : -1));
+    $('todayTitle').textContent = 'Hôm nay bạn đã nhập' + (items.length ? ' (' + items.length + ' đại lý)' : '');
+    const ul = $('todayList'); ul.innerHTML = '';
+    items.forEach(d => {
+      const li = document.createElement('li');
+      const n = document.createElement('span'); n.className = 'n'; n.textContent = d.dai_ly;
+      if (d.ket_qua) { const s = document.createElement('div'); s.className = 's'; s.textContent = d.ket_qua; n.appendChild(s); }
+      const t = document.createElement('span'); t.className = 't'; t.textContent = hm(d.at);
+      if (queue.some(q => q.id === d.id)) { const w = document.createElement('span'); w.className = 'wait'; w.textContent = 'chờ gửi'; t.appendChild(w); }
+      li.append(n, t); ul.appendChild(li);
+    });
+    $('todayEmpty').hidden = items.length > 0;
+    $('pending').hidden = queue.length === 0;
+    $('pendingText').textContent = queue.length + ' báo cáo chưa gửi được do mất mạng.';
+  }
+
+  async function send(doc) {
+    const res = await fetch(SHEET_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(doc)
+    });
+    const out = await res.json();
+    if (!out.ok) throw new Error(out.error || 'Lỗi');
+  }
+
+  let flushing = false;
+  async function flushQueue() {
+    if (flushing || !queue.length) return;
+    flushing = true;
+    for (const doc of queue.slice()) {
+      try { await send(doc); queue = queue.filter(q => q.id !== doc.id); store.set('stl_cho_gui', queue); }
+      catch (e) { break; }
+    }
+    flushing = false;
+    renderToday();
+  }
+  $('retryBtn').addEventListener('click', flushQueue);
+  window.addEventListener('online', flushQueue);
+
+  function resetForm() {
+    ['dai_ly', 'khu_vuc', 'sdt', 'ghi_chu'].forEach(id => { $(id).value = ''; });
+    picked.clear(); $('hang').querySelectorAll('.chip').forEach(x => x.setAttribute('aria-pressed', 'false'));
+    result = ''; $('kq').querySelectorAll('.res').forEach(x => x.setAttribute('aria-checked', 'false'));
+  }
+
+  let mode = 'form';
+  $('saveBtn').addEventListener('click', async () => {
+    if (mode === 'done') {
+      mode = 'form'; $('done').hidden = true; $('f').hidden = false;
+      $('saveBtn').textContent = 'Lưu báo cáo'; setStatus('');
+      window.scrollTo({ top: 0 }); $('dai_ly').focus(); return;
+    }
+    if (!myName) { askName(); return; }
+    const name = $('dai_ly').value.trim();
+    if (!name) {
+      $('qName').classList.add('err'); $('nameErr').hidden = false;
+      $('dai_ly').focus(); $('qName').scrollIntoView({ block: 'center' });
+      return;
+    }
+    $('qName').classList.remove('err'); $('nameErr').hidden = true;
+
+    const at = new Date();
+    const doc = {
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
+      at: at.toISOString(), ngay: dayKey(at),
+      nhan_vien: myName, dai_ly: name,
+      khu_vuc: $('khu_vuc').value.trim(),
+      sdt: $('sdt').value.replace(/\s+/g, ''),
+      hang_dang_ban: Array.from(picked).join(', '),
+      ket_qua: result, ghi_chu: $('ghi_chu').value.trim()
+    };
+
+    $('saveBtn').disabled = true; setStatus('Đang lưu…');
+    let sent = true;
+    try { await send(doc); } catch (e) { sent = false; queue.push(doc); store.set('stl_cho_gui', queue); }
+    history.push(doc); store.set('stl_lich_su', history);
+
+    resetForm();
+    $('f').hidden = true; $('done').hidden = false;
+    $('doneTitle').textContent = sent ? 'Đã lưu' : 'Đã lưu trên máy';
+    $('doneText').textContent = sent
+      ? name + ' · ' + hm(doc.at)
+      : name + ' · ' + hm(doc.at) + '. Mạng yếu nên chưa gửi được, máy sẽ tự gửi lại khi có mạng.';
+    mode = 'done'; $('saveBtn').textContent = 'Nhập đại lý tiếp theo'; setStatus('');
+    $('saveBtn').disabled = false;
+    renderToday();
+    window.scrollTo({ top: 0 });
+  });
+  $('dai_ly').addEventListener('input', () => { $('qName').classList.remove('err'); $('nameErr').hidden = true; });
+
+  renderToday();
+  flushQueue();
+})();
+</script>
+</body>
+</html>
