@@ -1,13 +1,49 @@
 import { ReportDoc } from '../types';
 import { getSheetUrl } from './storage';
 
-export async function sendReport(doc: ReportDoc): Promise<boolean> {
-  const sheetUrl = getSheetUrl();
-  if (!sheetUrl || sheetUrl === 'DAN_LINK_APPS_SCRIPT_VAO_DAY') {
-    throw new Error('Chưa cấu hình liên kết Google Apps Script Web App');
+export function validateSheetUrl(url: string): { valid: boolean; error?: string } {
+  const trimmed = (url || '').trim();
+  if (!trimmed || trimmed === 'DAN_LINK_APPS_SCRIPT_VAO_DAY') {
+    return {
+      valid: false,
+      error: 'Chưa cấu hình liên kết Google Apps Script Web App.',
+    };
   }
 
-  // Attempt standard fetch first (supports reading ok status if CORS headers are returned)
+  if (trimmed.includes('docs.google.com/spreadsheets')) {
+    return {
+      valid: false,
+      error:
+        'Bạn đang dán link trang tính Google Sheets (docs.google.com). Đây không phải link Web App. Bạn cần dán link Web App của Google Apps Script (dạng https://script.google.com/macros/s/.../exec).',
+    };
+  }
+
+  if (!trimmed.startsWith('https://script.google.com/macros/s/')) {
+    return {
+      valid: false,
+      error:
+        'Link không đúng định dạng. Link Web App Google Apps Script phải bắt đầu bằng https://script.google.com/macros/s/...',
+    };
+  }
+
+  if (trimmed.endsWith('/edit')) {
+    return {
+      valid: false,
+      error:
+        'Link của bạn đang kết thúc bằng /edit. Link Web App sau khi Triển khai (Deploy) phải kết thúc bằng /exec.',
+    };
+  }
+
+  return { valid: true };
+}
+
+export async function sendReport(doc: ReportDoc): Promise<boolean> {
+  const sheetUrl = getSheetUrl();
+  const validation = validateSheetUrl(sheetUrl);
+  if (!validation.valid) {
+    throw new Error(validation.error);
+  }
+
   try {
     const response = await fetch(sheetUrl, {
       method: 'POST',
@@ -21,23 +57,23 @@ export async function sendReport(doc: ReportDoc): Promise<boolean> {
     try {
       const data = await response.json();
       if (data && data.ok === false) {
-        throw new Error(data.error || 'Google Apps Script báo lỗi khi ghi dữ liệu');
+        throw new Error(data.error || 'Google Apps Script báo lỗi');
       }
+      return true;
     } catch {
-      // If response body is opaque or not JSON due to Google redirect,
-      // the POST was still transmitted and processed by Google Apps Script.
+      // If response body is not JSON or opaque due to redirect
+      if (response.ok || response.status === 200 || response.type === 'opaque') {
+        return true;
+      }
+      throw new Error(`Google Apps Script trả về mã lỗi HTTP: ${response.status}`);
     }
-
-    return true;
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
-    // If it's a known error from Apps Script, rethrow
-    if (message.includes('Google Apps Script báo lỗi')) {
+    if (message.includes('Google Apps Script báo lỗi') || message.includes('HTTP:')) {
       throw err;
     }
 
-    // Fallback: try mode 'no-cors' so browser allows the cross-origin request
-    // Google Apps Script doPost(e) will still execute and append row to Google Sheet
+    // Attempt fallback with text/plain
     try {
       await fetch(sheetUrl, {
         method: 'POST',
@@ -48,17 +84,24 @@ export async function sendReport(doc: ReportDoc): Promise<boolean> {
         body: JSON.stringify(doc),
       });
       return true;
-    } catch (fallbackErr) {
-      throw new Error('Không thể kết nối đến Google Apps Script. Vui lòng kiểm tra lại link Web App hoặc quyền truy cập "Anyone".');
+    } catch {
+      throw new Error(
+        'Không thể gửi đến Google Apps Script. Vui lòng kiểm tra lại quyền truy cập "Anyone" của Web App.'
+      );
     }
   }
 }
 
-export async function testConnection(url: string): Promise<{ ok: boolean; message: string }> {
-  if (!url || !url.startsWith('https://script.google.com/macros/s/')) {
+export async function testConnection(url: string): Promise<{
+  ok: boolean;
+  message: string;
+  details?: string;
+}> {
+  const validation = validateSheetUrl(url);
+  if (!validation.valid) {
     return {
       ok: false,
-      message: 'Link Web App không đúng định dạng. Phải bắt đầu bằng https://script.google.com/macros/s/...',
+      message: validation.error || 'Link không hợp lệ',
     };
   }
 
@@ -66,44 +109,75 @@ export async function testConnection(url: string): Promise<{ ok: boolean; messag
     id: 'test_' + Date.now().toString(36),
     at: new Date().toISOString(),
     ngay: new Date().toISOString().slice(0, 10),
-    nhan_vien: 'Hệ thống kiểm tra',
-    dai_ly: 'Đại lý Kiểm tra Kết nối',
-    khu_vuc: 'Kiểm tra',
-    sdt: '0900000000',
-    hang_dang_ban: 'Kiểm tra',
-    ket_qua: 'Kiểm tra kết nối',
-    ghi_chu: 'Dòng kiểm tra tự động từ hệ thống Báo cáo STL',
+    nhan_vien: 'Kiểm tra hệ thống',
+    dai_ly: 'Đại lý Test Kết Nối',
+    khu_vuc: 'Hà Nội',
+    sdt: '0988888888',
+    hang_dang_ban: 'Sơn Thăng Long',
+    ket_qua: 'Kiểm tra thành công',
+    ghi_chu: 'Dòng kiểm tra tự động - nếu bạn thấy dòng này thì kết nối đã chuẩn xác 100%!',
   };
 
   try {
-    // Attempt standard fetch
-    await fetch(url, {
+    const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(testPayload),
     });
-    return {
-      ok: true,
-      message: 'Kết nối thành công! Đã gửi 1 dòng dữ liệu kiểm tra sang Google Sheet.',
-    };
-  } catch {
-    // Attempt no-cors fetch
+
     try {
-      await fetch(url, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(testPayload),
-      });
+      const data = await response.json();
+      if (data && data.ok) {
+        return {
+          ok: true,
+          message:
+            data.message ||
+            'Kết nối thành công! Đã ghi 1 dòng kiểm tra vào Google Sheet.',
+        };
+      } else if (data && data.ok === false) {
+        return {
+          ok: false,
+          message: 'Apps Script báo lỗi: ' + (data.error || 'Không xác định'),
+        };
+      }
+    } catch {
+      // JSON parse failed, check status
+    }
+
+    if (response.ok || response.status === 200) {
       return {
         ok: true,
-        message: 'Đã gửi dữ liệu kiểm tra sang Google Sheet qua chế độ tương thích (no-cors). Hãy mở Google Sheet để kiểm tra dòng mới.',
-      };
-    } catch (err: unknown) {
-      return {
-        ok: false,
-        message: 'Lỗi khi kết nối: ' + (err instanceof Error ? err.message : String(err)),
+        message:
+          'Đã gửi thành công dữ liệu kiểm tra! Hãy mở Google Sheet (kiểm tra cả tab Trang tính1 và tab BaoCao) để xem dòng mới.',
       };
     }
+
+    return {
+      ok: false,
+      message: `Google trả về mã phản hồi ${response.status}. Hãy kiểm tra xem bạn đã chọn 'Anyone' khi triển khai Web App chưa.`,
+    };
+  } catch (err: unknown) {
+    // If standard fetch failed, try to diagnose
+    try {
+      // Test GET request
+      const getRes = await fetch(url, { method: 'GET' });
+      if (getRes.redirected && getRes.url.includes('accounts.google.com')) {
+        return {
+          ok: false,
+          message:
+            'Web App đang yêu cầu đăng nhập tài khoản Google. Bạn cần vào Apps Script > Triển khai lại > mục "Ai có quyền truy cập (Who has access)" phải chọn: "Bất kỳ ai (Anyone)".',
+        };
+      }
+    } catch {
+      // Ignore GET error
+    }
+
+    return {
+      ok: false,
+      message:
+        'Lỗi kết nối: ' +
+        (err instanceof Error ? err.message : String(err)) +
+        '. Vui lòng kiểm tra lại link Web App và quyền "Anyone".',
+    };
   }
 }

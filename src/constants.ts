@@ -1,22 +1,19 @@
 export const BRANDS = [
+  'Rober',
+  'Rober Gold',
+  'TF5',
   'Dulux',
   'Nippon',
   'Jotun',
   'Kova',
-  'Expo',
-  'Mykolor',
-  'Mutolux',
   'Khác'
 ];
 
 export const RESULTS = [
-  'Chào lần đầu',
-  'Ghé chăm sóc',
-  'Đã gửi báo giá',
-  'Nhập hàng trưng bày',
-  'Có đơn hàng',
-  'Hẹn quay lại',
-  'Chưa quan tâm'
+  'Mới',
+  'Mới - Nhập hàng',
+  'Cũ - Ghé thăm',
+  'Cũ - Nhập hàng'
 ];
 
 export const THU = [
