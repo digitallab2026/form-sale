@@ -17,8 +17,10 @@ import {
   saveHistory,
   getQueue,
   saveQueue,
+  getSheetUrl,
 } from './services/storage';
 import { sendReport } from './services/api';
+import { AlertCircle, CheckCircle2 } from 'lucide-react';
 
 const initialFormData: FormData = {
   dai_ly: '',
@@ -33,6 +35,7 @@ export const App: React.FC = () => {
   const [employeeName, setEmployeeName] = useState<string>('');
   const [isNameDialogOpen, setIsNameDialogOpen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+  const [hasSheetConfigured, setHasSheetConfigured] = useState<boolean>(false);
   const [mode, setMode] = useState<ScreenMode>('form');
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [hasNameError, setHasNameError] = useState<boolean>(false);
@@ -55,6 +58,13 @@ export const App: React.FC = () => {
   const formRef = useRef<HTMLFormElement | null>(null);
   const nameInputRef = useRef<HTMLInputElement | null>(null);
 
+  const checkSheetConfig = useCallback(() => {
+    const url = getSheetUrl();
+    const isConfigured = !!url && url.trim().length > 0 && url !== 'DAN_LINK_APPS_SCRIPT_VAO_DAY';
+    setHasSheetConfigured(isConfigured);
+    return isConfigured;
+  }, []);
+
   // Load initial state
   useEffect(() => {
     const savedName = getEmployeeName();
@@ -64,6 +74,8 @@ export const App: React.FC = () => {
       setIsNameDialogOpen(true);
     }
 
+    checkSheetConfig();
+
     const todayStr = dayKey(new Date());
     const allHistory = getHistory();
     const todayItems = allHistory.filter((item) => item.ngay === todayStr);
@@ -71,12 +83,15 @@ export const App: React.FC = () => {
 
     const initialQueue = getQueue();
     setQueue(initialQueue);
-  }, []);
+  }, [checkSheetConfig]);
 
   // Flush offline queue
   const flushQueue = useCallback(async () => {
     const currentQueue = getQueue();
     if (currentQueue.length === 0) return;
+
+    const isConfigured = checkSheetConfig();
+    if (!isConfigured) return;
 
     setIsFlushing(true);
     let remaining = [...currentQueue];
@@ -94,7 +109,7 @@ export const App: React.FC = () => {
     }
 
     setIsFlushing(false);
-  }, []);
+  }, [checkSheetConfig]);
 
   // Listen to online event to auto-sync
   useEffect(() => {
@@ -200,6 +215,40 @@ export const App: React.FC = () => {
 
         <DailyQuote />
 
+        {/* Google Sheet Connection Banner */}
+        {!hasSheetConfigured ? (
+          <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-sm flex items-center justify-between gap-3 animate-fadeIn">
+            <div className="flex items-center gap-2 min-w-0">
+              <AlertCircle className="w-5 h-5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
+              <div className="flex flex-col">
+                <span className="font-semibold text-xs sm:text-sm">Chưa liên kết Google Sheet</span>
+                <span className="text-[12px] text-muted">Báo cáo sẽ lưu tạm trên máy cho đến khi bạn kết nối.</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsSettingsOpen(true)}
+              className="px-3 py-1.5 rounded-xl bg-accent text-accent-ink text-xs font-bold whitespace-nowrap hover:opacity-90 transition-opacity flex-shrink-0"
+            >
+              Cấu hình ngay
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between px-1 py-0.5 text-xs text-muted">
+            <span className="inline-flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 font-medium">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              Đã liên kết Google Sheet
+            </span>
+            <button
+              type="button"
+              onClick={() => setIsSettingsOpen(true)}
+              className="text-accent underline hover:opacity-80 transition-opacity"
+            >
+              Đổi liên kết
+            </button>
+          </div>
+        )}
+
         <PendingBanner
           count={queue.length}
           isFlushing={isFlushing}
@@ -220,6 +269,8 @@ export const App: React.FC = () => {
             isSent={lastSubmitted.isSent}
             dealerName={lastSubmitted.dealerName}
             timeString={lastSubmitted.timeString}
+            hasSheetConfigured={hasSheetConfigured}
+            onOpenSettings={() => setIsSettingsOpen(true)}
           />
         )}
 
@@ -256,8 +307,12 @@ export const App: React.FC = () => {
       {/* Settings Dialog for Google Sheet Apps Script URL */}
       <SettingsDialog
         isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
+        onClose={() => {
+          setIsSettingsOpen(false);
+          checkSheetConfig();
+        }}
         queueCount={queue.length}
+        onFlushQueue={flushQueue}
       />
     </div>
   );
