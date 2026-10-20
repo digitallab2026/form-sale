@@ -1,0 +1,8 @@
+{
+  "name": "Báo cáo đại lý STL",
+  "description": "Ứng dụng ghi nhận báo cáo đi thị trường và thăm đại lý dành cho nhân viên kinh doanh Sơn Thăng Long.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
